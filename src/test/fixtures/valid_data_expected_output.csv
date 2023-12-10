@@ -1,0 +1,5 @@
+Asset,Weight,CurrentValue,CurrentMix,DeltaToTarget,AbsDeltaToTarget,NewMoney,Total,FinalValue,FinalMix,Action
+Asset1,0.2,1000,0.25,-0.04999999999999999,-199.99999999999994,400.0,200.00000000000006,1200.0,0.2,Buy
+Asset2,0.15,1000,0.25,-0.1,-400.0,300.0,-100.0,900.0,0.15,Sell
+Asset3,0.15,1000,0.25,-0.1,-400.0,300.0,-100.0,900.0,0.15,Sell
+Asset4,0.5,1000,0.25,0.25,1000.0,1000.0,2000.0,3000.0,0.5,Buy
