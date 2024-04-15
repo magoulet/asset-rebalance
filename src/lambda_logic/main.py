@@ -1,7 +1,9 @@
 import json
 import logging
-import numbers
 import os
+from math import isclose
+from numbers import Number
+
 import pandas as pd
 
 # Set the level of logging
@@ -80,7 +82,7 @@ class Portfolio:
         if new_money is None:
             new_money = 0
 
-        if not isinstance(new_money, numbers.Number):
+        if not isinstance(new_money, Number):
             error_msg = "Invalid type: new money should be a numeric type"
             logging.error(error_msg)
             raise TypeError(error_msg)
@@ -103,8 +105,8 @@ class Portfolio:
         self.final_portfolio_value = sum(self.model['FinalValue'])
         self.model['FinalMix'] = self.model['FinalValue'] / self.final_portfolio_value
 
-        if self.model['FinalMix'].sum() != 1:
-            raise ValueError("Sum of FinalMix is not equal to 1.")
+        if not isclose(self.model['FinalMix'].sum(), 1, rel_tol=threshold):
+            raise ValueError(f"Sum of FinalMix is not close to 1 (within tolerance): {self.model['FinalMix'].sum()}")
 
         diff = abs(self.model['FinalMix'] - self.model['Weight'])
         if any(diff > threshold):
