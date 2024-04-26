@@ -16,14 +16,16 @@ Before you deploy the stack, make sure you have the following installed:
 1. Clone the repository to your local machine by running:
 
    ```bash
-   git clone https://github.com/your-repo/asset-rebalancer.git
-   cd asset-rebalancer
+   git clone https://github.com/magoulet/asset-rebalance.git
+   cd asset-rebalance
    ```
 
-2. Install the required Python packages:
+2. Install the required Python packages in a virtual environment:
 
    ```bash
-   python -m pip install -r requirements.txt
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
    ```
 
 3. Bootstrap your AWS environment to use the AWS CDK:
