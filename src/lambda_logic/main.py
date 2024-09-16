@@ -73,10 +73,10 @@ class Portfolio:
         self.model['CurrentValue'] = self.model['Asset'].map(current_value)
         self.portfolio_value = sum(self.model['CurrentValue'])
 
-    def calc_current_mix(self):
+    def calc_current_mix(self, threshold=0.01):
         self.model['CurrentMix'] = self.model['CurrentValue'] / self.portfolio_value
-        if self.model['CurrentMix'].sum() != 1:
-            raise ValueError("Sum of CurrentMix is not equal to 1.")
+        if not isclose(self.model['CurrentMix'].sum(), 1, rel_tol=threshold):
+            raise ValueError(f"Sum of CurrentMix is not close to 1 (within tolerance): {self.model['FinalMix'].sum()}")
 
     def calc_delta_to_target(self, new_money=None):
         if new_money is None:
