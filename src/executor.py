@@ -3,6 +3,7 @@ import logging
 import os
 import pickle
 import sys
+import pprint
 
 import boto3
 import uuid
@@ -17,6 +18,9 @@ if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
 else:
     logging.basicConfig(level=logging.INFO)
+
+# Configure a pretty printer for more readable logging
+pp = pprint.PrettyPrinter(indent=4)
 
 dynamodb_client = boto3.client("dynamodb")
 table = os.environ.get("DYNAMO_TABLE_NAME")
@@ -53,40 +57,92 @@ def handler(event, context):
     logging.info(f"## Starting Executor function at : {now}")  
     print(f"## Starting Executor function at : {now}")
 
-    # Print the event 
-    logging.debug(f"## event: {event}")
+    # Log the entire event in a readable format
+    logging.info("Received Event:")
+    logging.info(pp.pformat(event))
 
-    # Parse the JSON body
-    event_body = json.loads(event['body'])
+    try:
+        # Parse the JSON body
+        event_body = json.loads(event['body'])
 
-    # Print the parsed body for troubleshooting
-    logging.debug(f"## event_body: {event_body}")
+        # Log the parsed body with detailed, readable formatting
+        logging.info("Parsed Event Body:")
+        logging.info(pp.pformat(event_body))
 
-    model = event_body['model']
-    new_money = event_body['new_money']
-    values = event_body['values']
+        # Detailed logging of each parameter
+        logging.info("Model:")
+        logging.info(pp.pformat(event_body.get('model')))
+        
+        logging.info("New Money:")
+        logging.info(pp.pformat(event_body.get('new_money')))
+        
+        logging.info("Values:")
+        logging.info(pp.pformat(event_body.get('values')))
 
-    # Execute the main logic
-    result = main(model=model, new_money=new_money, values=values)
+        # Extract parameters with more robust error handling
+        model = event_body.get('model')
+        new_money = event_body.get('new_money')
+        values = event_body.get('values')
 
-    # Convert UUID to string
-    execution_id = str(uuid.uuid4())
+        # Validate parameters
+        if model is None:
+            raise ValueError("Missing 'model' in the request")
+        if new_money is None:
+            raise ValueError("Missing 'new_money' in the request")
+        if values is None:
+            raise ValueError("Missing 'values' in the request")
 
-    # Convert event and result to strings
-    event_str = json.dumps(event)
-    result_str = result.to_json(orient='records')
+        # Validate model weights
+        if not isinstance(model, dict):
+            raise TypeError("Model must be a dictionary")
+        
+        total_weight = sum(model.values())
+        logging.info(f"Total Weight Calculation: {total_weight}")
+        
+        if abs(total_weight - 1.0) > 1e-9:
+            logging.error(f"Model weights do not sum to 1. Total weight: {total_weight}")
+            raise ValueError(f"Model weights must sum to 1. Current total: {total_weight}")
 
-    write_to_database(
-        execution_id=execution_id,
-        start_execution=now,
-        event=event_str,
-        result=result_str,
+        # Execute the main logic
+        result = main(model=model, new_money=new_money, values=values)
+
+        # Convert UUID to string
+        execution_id = str(uuid.uuid4())
+
+        # Convert event and result to strings
+        event_str = json.dumps(event)
+        result_str = result.to_json(orient='records')
+
+        write_to_database(
+            execution_id=execution_id,
+            start_execution=now,
+            event=event_str,
+            result=result_str,
         )
 
-    return {
-        "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "body": result_str
-    }
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": result_str
+        }
+
+    except Exception as e:
+        logging.error(f"Error processing request: {str(e)}")
+        logging.error(f"Exception type: {type(e)}")
+        
+        # Include full traceback for debugging
+        import traceback
+        logging.error(traceback.format_exc())
+
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": json.dumps({
+                "error": str(e),
+                "message": "Failed to process the request"
+            })
+        }

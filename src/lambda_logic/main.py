@@ -35,9 +35,19 @@ class Portfolio:
             logging.error(error_msg)
             raise
 
+        # Add extensive logging for weight calculation
+        logging.info("Model Weights:")
+        for asset, weight in model.items():
+            logging.info(f"{asset}: {weight}")
+
         total_weight = df.Weight.sum()
-        if total_weight != 1:
-            error_msg = "Sum of weights in the model not equal to 1."
+        logging.info(f"Total Weight Calculation:")
+        logging.info(f"Sum of weights: {total_weight}")
+        logging.info(f"DataFrame weights: {df['Weight'].tolist()}")
+
+        # Use a more tolerant comparison
+        if not isclose(total_weight, 1, rel_tol=1e-9, abs_tol=1e-9):
+            error_msg = f"Sum of weights in the model not equal to 1. Total weight: {total_weight}"
             logging.error(error_msg)
             raise ValueError(error_msg)
 
